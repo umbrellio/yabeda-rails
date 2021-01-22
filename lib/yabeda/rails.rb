@@ -3,6 +3,7 @@
 require "yabeda"
 require "rails"
 require "yabeda/rails/railtie"
+require "yabeda/rails/config"
 
 module Yabeda
   # Minimal set of Rails-specific metrics for using with Yabeda
@@ -25,6 +26,8 @@ module Yabeda
       # rubocop: disable Metrics/MethodLength, Metrics/BlockLength, Metrics/AbcSize
       def install!
         Yabeda.configure do
+          config = Config.new
+
           group :rails
 
           counter   :requests_total,   comment: "A counter of the total number of HTTP requests rails processed.",
