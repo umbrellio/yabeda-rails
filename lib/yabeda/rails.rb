@@ -28,28 +28,34 @@ module Yabeda
 
           counter :requests_total do
             comment "A counter of the total number of HTTP requests rails processed."
-            tags %i[controller action status format method]
+            tags TAGS
           end
 
           histogram :request_duration do
             comment "A histogram of the response latency."
             buckets LONG_RUNNING_REQUEST_BUCKETS
             unit :seconds
-            tags %i[controller action status format method]
+            tags TAGS
           end
 
           histogram :view_runtime do
             comment "A histogram of the view rendering time."
             buckets LONG_RUNNING_REQUEST_BUCKETS
             unit :seconds
-            tags %i[controller action status format method]
+            tags TAGS
+          end
+
+          histogram :db_query_count do
+            comment "A histogram of DB query count."
+            buckets [1, 10, 25, 50, 100, 250, 500, 1000]
+            tags TAGS
           end
 
           histogram :db_runtime do
-            comment "A histogram of the activerecord execution time."
+            comment "A histogram of DB execution time."
             buckets LONG_RUNNING_REQUEST_BUCKETS
             unit :seconds
-            tags %i[controller action status format method]
+            tags TAGS
           end
 
           histogram :cpu_time do
@@ -65,6 +71,7 @@ module Yabeda
           Yabeda.rails_requests_total.increment(labels)
           Yabeda.rails_request_duration.measure(labels, ms2s(event.duration))
           Yabeda.rails_view_runtime.measure(labels, ms2s(event.payload[:view_runtime]))
+          Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count])
           Yabeda.rails_db_runtime.measure(labels, ms2s(event.payload[:db_runtime]))
           Yabeda.rails_cpu_time.measure(labels, event.cpu_time)
         end
