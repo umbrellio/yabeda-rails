@@ -3,7 +3,8 @@ require:
 - rubocop-rspec
 
 AllCops:
-  TargetRubyVersion: 2.4
+  TargetRubyVersion: 2.7
+  NewCops: enable
 
 Metrics/BlockLength:
   Exclude:
@@ -41,3 +42,5 @@ Style/TrailingCommaInHashLiteral:
   Enabled: true
   EnforcedStyleForMultiline: consistent_comma
 
+Gemspec/RequireMFA:
+  Enabled: false

@@ -13,4 +13,5 @@ group :development, :test do
 
   gem "rubocop", "~> 1.8"
   gem "rubocop-rspec"
+  gem "rubocop-rake"
 end
