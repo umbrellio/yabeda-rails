@@ -11,6 +11,8 @@ module Yabeda
     DEFAULT_BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10].freeze
     LONG_RUNNING_REQUEST_BUCKETS = [*DEFAULT_BUCKETS, 30, 60, 120, 300, 600].freeze
 
+    MUTEX = Mutex.new
+
     class << self
       def controller_handlers
         @controller_handlers ||= []
@@ -23,57 +25,63 @@ module Yabeda
       # Declare metrics and install event handlers for collecting themya
       # rubocop: disable Metrics/MethodLength, Metrics/BlockLength, Metrics/AbcSize
       def install!
-        Yabeda.configure do
-          group :rails
+        MUTEX.synchronize do
+          return if @installed
 
-          counter :requests_total do
-            comment "A counter of the total number of HTTP requests rails processed."
-            tags TAGS
+          Yabeda.configure do
+            group :rails
+
+            counter :requests_total do
+              comment "A counter of the total number of HTTP requests rails processed."
+              tags TAGS
+            end
+
+            histogram :request_duration do
+              comment "A histogram of the response latency."
+              buckets LONG_RUNNING_REQUEST_BUCKETS
+              unit :seconds
+              tags TAGS
+            end
+
+            histogram :view_runtime do
+              comment "A histogram of the view rendering time."
+              buckets LONG_RUNNING_REQUEST_BUCKETS
+              unit :seconds
+              tags TAGS
+            end
+
+            histogram :db_query_count do
+              comment "A histogram of DB query count."
+              buckets [1, 10, 25, 50, 100, 250, 500, 1000]
+              tags TAGS
+            end
+
+            histogram :db_runtime do
+              comment "A histogram of DB execution time."
+              buckets LONG_RUNNING_REQUEST_BUCKETS
+              unit :seconds
+              tags TAGS
+            end
+
+            histogram :cpu_time do
+              comment "A histogram of CPU time."
+              buckets DEFAULT_BUCKETS
+              tags TAGS
+            end
           end
 
-          histogram :request_duration do
-            comment "A histogram of the response latency."
-            buckets LONG_RUNNING_REQUEST_BUCKETS
-            unit :seconds
-            tags TAGS
+          subscribe!
+
+          on_controller_action do |event, labels|
+            Yabeda.rails_requests_total.increment(labels)
+            Yabeda.rails_request_duration.measure(labels, ms2s(event.duration))
+            Yabeda.rails_view_runtime.measure(labels, ms2s(event.payload[:view_runtime]))
+            Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count])
+            Yabeda.rails_db_runtime.measure(labels, ms2s(event.payload[:db_runtime]))
+            Yabeda.rails_cpu_time.measure(labels, event.cpu_time)
           end
 
-          histogram :view_runtime do
-            comment "A histogram of the view rendering time."
-            buckets LONG_RUNNING_REQUEST_BUCKETS
-            unit :seconds
-            tags TAGS
-          end
-
-          histogram :db_query_count do
-            comment "A histogram of DB query count."
-            buckets [1, 10, 25, 50, 100, 250, 500, 1000]
-            tags TAGS
-          end
-
-          histogram :db_runtime do
-            comment "A histogram of DB execution time."
-            buckets LONG_RUNNING_REQUEST_BUCKETS
-            unit :seconds
-            tags TAGS
-          end
-
-          histogram :cpu_time do
-            comment "A histogram of CPU time."
-            buckets DEFAULT_BUCKETS
-            tags TAGS
-          end
-        end
-
-        subscribe!
-
-        on_controller_action do |event, labels|
-          Yabeda.rails_requests_total.increment(labels)
-          Yabeda.rails_request_duration.measure(labels, ms2s(event.duration))
-          Yabeda.rails_view_runtime.measure(labels, ms2s(event.payload[:view_runtime]))
-          Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count])
-          Yabeda.rails_db_runtime.measure(labels, ms2s(event.payload[:db_runtime]))
-          Yabeda.rails_cpu_time.measure(labels, event.cpu_time)
+          @installed = true
         end
       end
       # rubocop: enable Metrics/MethodLength, Metrics/BlockLength, Metrics/AbcSize
