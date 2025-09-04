@@ -76,7 +76,7 @@ module Yabeda
             Yabeda.rails_requests_total.increment(labels)
             Yabeda.rails_request_duration.measure(labels, ms2s(event.duration))
             Yabeda.rails_view_runtime.measure(labels, ms2s(event.payload[:view_runtime]))
-            Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count])
+            Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count].to_i)
             Yabeda.rails_db_runtime.measure(labels, ms2s(event.payload[:db_runtime]))
             Yabeda.rails_cpu_time.measure(labels, event.cpu_time)
           end
