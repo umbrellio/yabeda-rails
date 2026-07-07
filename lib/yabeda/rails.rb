@@ -68,6 +68,16 @@ module Yabeda
               buckets DEFAULT_BUCKETS
               tags TAGS
             end
+
+            counter :allocations_total do
+              comment "A counter of the total number of object allocations during request processing."
+              tags TAGS
+            end
+
+            counter :allocation_bytes do
+              comment "A counter of the total bytes allocated during request processing."
+              tags TAGS
+            end
           end
 
           subscribe!
@@ -79,6 +89,12 @@ module Yabeda
             Yabeda.rails_db_query_count.measure(labels, event.payload[:db_query_count].to_i)
             Yabeda.rails_db_runtime.measure(labels, ms2s(event.payload[:db_runtime]))
             Yabeda.rails_cpu_time.measure(labels, event.cpu_time)
+            Yabeda.rails_allocations_total.increment(labels, by: event.allocations)
+
+            # Provided by ActiveSupport::Notifications::Event patch from umbrellio-utils
+            if event.respond_to?(:malloc_increase_bytes) && event.malloc_increase_bytes.positive?
+              Yabeda.rails_allocation_bytes.increment(labels, by: event.malloc_increase_bytes)
+            end
           end
 
           @installed = true
@@ -87,8 +103,10 @@ module Yabeda
       # rubocop: enable Metrics/MethodLength, Metrics/BlockLength, Metrics/AbcSize
 
       def subscribe!
-        ActiveSupport::Notifications.subscribe("process_action.action_controller") do |*args|
-          event = ActiveSupport::Notifications::Event.new(*args)
+        # NOTE: Single-argument block receives the original Event instance with
+        # populated monotonic timings (cpu_time, allocations, etc.), unlike an event
+        # reconstructed from splatted arguments.
+        ActiveSupport::Notifications.subscribe("process_action.action_controller") do |event|
           process_event!(event)
         end
       end
