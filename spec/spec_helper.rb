@@ -2,6 +2,11 @@
 
 require "bundler/setup"
 require "yabeda/rails"
+require "yabeda/rspec"
+
+# Declare metrics and install the notification subscription. Metrics are
+# registered later, by the `Yabeda.configure!` call from yabeda/rspec.
+Yabeda::Rails.install!
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

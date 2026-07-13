@@ -43,6 +43,18 @@ You always can add support for your app server to [lib/yabeda/rails/railtie.rb](
  - Web request duration: `rails_request_duration` (in seconds)
  - Views rendering duration: `rails_view_runtime` (in seconds)
  - DB request duration: `rails_db_runtime` (in seconds)
+ - DB query count: `rails_db_query_count`
+ - CPU time: `rails_cpu_time` (in seconds)
+ - Object allocations: `rails_allocations_total`
+ - Bytes allocated: `rails_allocation_bytes` (requires the
+   `ActiveSupport::Notifications::Event` patch from umbrellio-utils)
+
+> **Allocation metrics are approximate.** Both are derived from process-global
+> `GC.stat` counters, so under threaded servers (Puma with >1 thread per worker,
+> Sidekiq concurrency) they include allocations from sibling threads serving
+> concurrent requests — treat them as process-wide signals, not exact per-request
+> counts. `rails_allocation_bytes` additionally undercounts when a GC runs
+> mid-request (negative deltas are dropped by the `positive?` guard).
 
 
 ## Hooks
