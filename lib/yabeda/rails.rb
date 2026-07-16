@@ -95,7 +95,7 @@ module Yabeda
 
             # Provided by ActiveSupport::Notifications::Event patch from umbrellio-utils
             if event.respond_to?(:malloc_increase_bytes) && event.malloc_increase_bytes.positive?
-              Yabeda.rails_allocation_bytes.increment(labels, by: event.malloc_increase_bytes)
+              Yabeda.rails_malloc_increase_bytes.increment(labels, by: event.malloc_increase_bytes)
             end
           end
 
