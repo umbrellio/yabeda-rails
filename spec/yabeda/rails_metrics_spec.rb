@@ -34,8 +34,8 @@ RSpec.describe Yabeda::Rails do
       .and measure_yabeda_histogram(Yabeda.rails.cpu_time).with_tags(labels)
   end
 
-  it "does not increment allocation_bytes without the Event patch" do
-    expect { instrument }.not_to increment_yabeda_counter(Yabeda.rails.allocation_bytes)
+  it "does not increment malloc_increase_bytes without the Event patch" do
+    expect { instrument }.not_to increment_yabeda_counter(Yabeda.rails.malloc_increase_bytes)
   end
 
   context "when the Event is patched with malloc_increase_bytes" do
@@ -47,9 +47,9 @@ RSpec.describe Yabeda::Rails do
       # rubocop:enable RSpec/AnyInstance
     end
 
-    it "increments allocation_bytes" do
+    it "increments malloc_increase_bytes" do
       expect { instrument }
-        .to increment_yabeda_counter(Yabeda.rails.allocation_bytes).with(labels => 4096)
+        .to increment_yabeda_counter(Yabeda.rails.malloc_increase_bytes).with(labels => 4096)
     end
   end
 end

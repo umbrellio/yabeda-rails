@@ -70,12 +70,14 @@ module Yabeda
             end
 
             counter :allocations_total do
-              comment "A counter of the total number of object allocations during request processing."
+              comment "Object allocations during request processing (process-global, approximate under concurrency)."
               tags TAGS
             end
 
-            counter :allocation_bytes do
-              comment "A counter of the total bytes allocated during request processing."
+            # NOTE: off-heap malloc increase since the last GC, not total bytes allocated;
+            # a lower bound that is unreliable across GC (see the umbrellio-utils patch).
+            counter :malloc_increase_bytes do
+              comment "A counter of malloc'd (off-heap) bytes since the last GC during request processing."
               tags TAGS
             end
           end
@@ -93,7 +95,7 @@ module Yabeda
 
             # Provided by ActiveSupport::Notifications::Event patch from umbrellio-utils
             if event.respond_to?(:malloc_increase_bytes) && event.malloc_increase_bytes.positive?
-              Yabeda.rails_allocation_bytes.increment(labels, by: event.malloc_increase_bytes)
+              Yabeda.rails_malloc_increase_bytes.increment(labels, by: event.malloc_increase_bytes)
             end
           end
 

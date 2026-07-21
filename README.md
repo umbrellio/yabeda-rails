@@ -46,15 +46,13 @@ You always can add support for your app server to [lib/yabeda/rails/railtie.rb](
  - DB query count: `rails_db_query_count`
  - CPU time: `rails_cpu_time` (in seconds)
  - Object allocations: `rails_allocations_total`
- - Bytes allocated: `rails_allocation_bytes` (requires the
-   `ActiveSupport::Notifications::Event` patch from umbrellio-utils)
+ - Malloc increase since last GC: `rails_malloc_increase_bytes` (requires the `ActiveSupport::Notifications::Event` patch from umbrellio-utils)
 
-> **Allocation metrics are approximate.** Both are derived from process-global
-> `GC.stat` counters, so under threaded servers (Puma with >1 thread per worker,
-> Sidekiq concurrency) they include allocations from sibling threads serving
-> concurrent requests — treat them as process-wide signals, not exact per-request
-> counts. `rails_allocation_bytes` additionally undercounts when a GC runs
-> mid-request (negative deltas are dropped by the `positive?` guard).
+> Both allocation metrics are process-global, so under threaded servers 
+> (Puma with >1 thread per worker, Sidekiq concurrency) they also count concurrent requests — treat
+> them as approximate. `rails_malloc_increase_bytes` is an off-heap lower bound that
+> resets on GC, not total bytes allocated; use `rails_allocations_total` for memory
+> comparisons.
 
 
 ## Hooks
